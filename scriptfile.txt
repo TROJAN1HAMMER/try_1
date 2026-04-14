@@ -1,48 +1,51 @@
-pipeline {
-    agent any
+    pipeline {
+        agent any
 
-    environment {
-        IMAGE_NAME = "th500/html-app"
-    }
-
-    stages {
-
-        stage('Clone') {
-            steps {
-                git branch: 'main',
-                    url: 'https://github.com/TROJAN1HAMMER/try_1.git'
-                or git '<repo_link>'
-            }
+        environment {
+            IMAGE_NAME = "th500/html-app"
         }
 
-        stage('Build Docker Image') {
-            steps {
-                bat 'docker build -t %IMAGE_NAME% .'
-            }
-        }
+        stages {
 
-        stage('Push to DockerHub') {
-            steps {
-                withCredentials([usernamePassword(
-                    credentialsId: 'dockerhub-creds',
-                    usernameVariable: 'DOCKER_USER',
-                    passwordVariable: 'DOCKER_PASS'
-                )]) {
+            stage('Clone') {
+                steps {
+                    git branch: 'main',
+                        url: 'https://github.com/TROJAN1HAMMER/try_1.git'
+                    or git '<repo_link>'
+                }
+            }
+
+            stage('Build Docker Image') {
+                steps {
+                    bat 'docker build -t %IMAGE_NAME% .'
+                }
+            }
+
+            stage('Push to DockerHub') {
+                steps {
+                    withCredentials([usernamePassword(
+                        credentialsId: 'dockerhub-creds',
+                        usernameVariable: 'DOCKER_USER',
+                        passwordVariable: 'DOCKER_PASS'
+                    )]) {
+                        bat '''
+                        docker login -u %DOCKER_USER% -p %DOCKER_PASS%
+                        docker push %IMAGE_NAME%
+                        '''
+                    }
+                }
+            } 
+            
+            stage('Deploy to Kubernetes') {
+                steps {
                     bat '''
-                    docker login -u %DOCKER_USER% -p %DOCKER_PASS%
-                    docker push %IMAGE_NAME%
+                    set KUBECONFIG=C:\\Users\\ASUS\\.kube\\config
+                    kubectl apply -f deployment.yaml
                     '''
                 }
             }
-        } 
-        
-        stage('Deploy to Kubernetes') {
-            steps {
-                bat '''
-                set KUBECONFIG=C:\\Users\\ASUS\\.kube\\config
-                kubectl apply -f deployment.yaml
-                '''
-            }
         }
     }
-}
+
+
+docker run -p 8085:80 th500/html-app
