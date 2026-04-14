@@ -49,3 +49,4 @@
 
 
 docker run -p 8085:80 th500/html-app
+kubectl port-forward deployment/node-app 8082:3000
